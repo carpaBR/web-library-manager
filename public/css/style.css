@@ -263,9 +263,54 @@ input:focus, select:focus {
     cursor: pointer;
 }
 
+/* Barra de usuário logado */
+#user-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+#welcome-msg {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+}
+
+#btnLogout {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    padding: 0.35rem 0.9rem;
+    border-radius: 20px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#btnLogout:hover {
+    background: #fef2f2;
+    border-color: #fca5a5;
+    color: #ef4444;
+}
+
 /* Mobile Responsivo */
 @media (max-width: 600px) {
     .row {
         grid-template-columns: 1fr;
     }
+}
+
+/* Animação de Renderização no Scroll (Reveal) */
+.reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.6s ease-out;
+}
+
+.reveal.active {
+    opacity: 1;
+    transform: translateY(0);
 }

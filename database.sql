@@ -17,3 +17,14 @@ INSERT INTO livros (titulo, autor, genero, isbn, status) VALUES
 ('1984', 'George Orwell', 'Ficção Distópica', '9788535914849', 'Lido'),
 ('O Senhor dos Anéis', 'J.R.R. Tolkien', 'Fantasia', '9788595084742', 'Quero Ler'),
 ('A Arte da Guerra', 'Sun Tzu', 'Estratégia', '9788520448151', 'Lendo');
+
+-- Tabela de usuários para autenticação simples
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario VARCHAR(100) NOT NULL UNIQUE,
+    senha VARCHAR(255) NOT NULL,
+    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Usuário padrão para teste (usuario: admin | senha: 1234)
+INSERT IGNORE INTO usuarios (usuario, senha) VALUES ('admin', '1234');

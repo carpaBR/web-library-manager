@@ -5,7 +5,7 @@ const mysql = require('mysql2');
 const connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'univesp', // Troque pela senha do seu banco de dados, se houver
+    password: '', // Troque pela senha do seu banco de dados, se houver
     database: 'biblioteca_pessoal'
 });
 
