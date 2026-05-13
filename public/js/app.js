@@ -74,7 +74,7 @@ function renderBooks(books) {
         const statusClass = `status-${book.status.replace(/\s+/g, '')}`;
 
         const imgHtml = book.capa_url ?
-            `<img src="${book.capa_url}" alt="Capa" style="width: 100%; height: 200px; object-fit: cover; border-radius: var(--radius) var(--radius) 0 0; background: #eee;">` :
+            `<img src="${book.capa_url}" alt="Capa" style="width: 100%; height: 200px; object-fit: cover; border-radius: var(--radius) var(--radius) 0 0; background: #eee;" onerror="this.onerror=null; this.outerHTML='<div style=\\'height: 200px; background: #E2E8F0; display:flex; align-items:center; justify-content:center; color: var(--text-muted); border-radius: var(--radius) var(--radius) 0 0;\\'>📚 Sem Capa</div>';">` :
             `<div style="height: 200px; background: #E2E8F0; display:flex; align-items:center; justify-content:center; color: var(--text-muted); border-radius: var(--radius) var(--radius) 0 0;">📚 Sem Capa</div>`;
 
         const card = document.createElement('div');
@@ -109,7 +109,7 @@ function renderBooks(books) {
     observeElements();
 }
 
-// Busca de ISBN via API do Google Books
+// Busca de ISBN via API da OpenLibrary
 document.getElementById('btnBuscarIsbn').addEventListener('click', async () => {
     const isbnInput = document.getElementById('isbn').value.replace(/\D/g, '');
 
@@ -124,18 +124,21 @@ document.getElementById('btnBuscarIsbn').addEventListener('click', async () => {
     btn.disabled = true;
 
     try {
-        const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbnInput}`);
+        const response = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbnInput}&format=json&jscmd=data`);
         const data = await response.json();
+        const bookKey = `ISBN:${isbnInput}`;
 
-        if (data.items && data.items.length > 0) {
-            const info = data.items[0].volumeInfo;
+        if (data[bookKey]) {
+            const info = data[bookKey];
 
-            if (info.title)      document.getElementById('titulo').value = info.title;
-            if (info.authors)    document.getElementById('autor').value  = info.authors.join(', ');
-            if (info.categories) document.getElementById('genero').value = info.categories[0];
+            if (info.title) document.getElementById('titulo').value = info.title;
+            if (info.authors) document.getElementById('autor').value = info.authors.map(a => a.name).join(', ');
+            if (info.subjects && info.subjects.length > 0) document.getElementById('genero').value = info.subjects[0].name;
 
-            if (info.imageLinks && info.imageLinks.thumbnail) {
-                document.getElementById('capa_url').value = info.imageLinks.thumbnail.replace('http:', 'https:');
+            if (info.cover && info.cover.large) {
+                document.getElementById('capa_url').value = info.cover.large;
+            } else if (info.cover && info.cover.medium) {
+                document.getElementById('capa_url').value = info.cover.medium;
             }
 
             showFeedback('Dados encontrados com sucesso!', 'green');
@@ -144,7 +147,7 @@ document.getElementById('btnBuscarIsbn').addEventListener('click', async () => {
         }
     } catch (error) {
         console.error(error);
-        showFeedback('Erro na conexão com Google Books.', 'red');
+        showFeedback('Erro na conexão com OpenLibrary.', 'red');
     } finally {
         btn.textContent = textoOriginal;
         btn.disabled = false;
@@ -155,12 +158,12 @@ document.getElementById('btnBuscarIsbn').addEventListener('click', async () => {
 document.getElementById('bookForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const titulo   = document.getElementById('titulo').value;
-    const autor    = document.getElementById('autor').value;
-    const genero   = document.getElementById('genero').value;
-    const isbn     = document.getElementById('isbn').value;
+    const titulo = document.getElementById('titulo').value;
+    const autor = document.getElementById('autor').value;
+    const genero = document.getElementById('genero').value;
+    const isbn = document.getElementById('isbn').value;
     const capa_url = document.getElementById('capa_url').value;
-    const status   = document.getElementById('status').value;
+    const status = document.getElementById('status').value;
 
     const newBook = { titulo, autor, genero, isbn, capa_url, status };
 
@@ -250,7 +253,7 @@ function showFeedback(msg, color) {
 // Inicialização: primeiro verifica auth, depois carrega livros
 checkAuth().then(logado => {
     if (logado) fetchBooks();
-    
+
     // Inicia a observação de elementos estáticos com a classe .reveal
     observeElements();
 });

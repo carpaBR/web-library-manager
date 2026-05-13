@@ -5,6 +5,9 @@ const authController = require('../controllers/authController');
 // POST /api/auth/login  — faz o login
 router.post('/login', authController.login);
 
+// POST /api/auth/register — cadastra um novo usuário
+router.post('/register', authController.register);
+
 // POST /api/auth/logout — faz o logout
 router.post('/logout', authController.logout);
 
