@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS livros (
     autor VARCHAR(255),
     genero VARCHAR(100),
     isbn VARCHAR(20),
+    capa_url VARCHAR(1000),
     status ENUM('Lido', 'Lendo', 'Quero Ler', 'Emprestado') DEFAULT 'Quero Ler',
     data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
