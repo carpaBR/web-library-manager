@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema de Gerenciamento de Bibliotecas Pessoais. Controle seus livros e leituras.">
+    <title>Minha Biblioteca Pessoal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Cabeçalho -->
+        <header class="reveal">
+            <h1>Minha Biblioteca</h1>
+            <p>Organize suas leituras, controle empréstimos e planeje suas próximas aventuras literárias.</p>
+        </header>
+
+        <main>
+            <!-- Área de Adicionar Livros -->
+            <section class="card form-section reveal">
+                <h2>Adicionar Novo Livro</h2>
+                <form id="bookForm">
+                    <div class="input-group">
+                        <label for="titulo">Título do Livro</label>
+                        <input type="text" id="titulo" placeholder="Ex: O Pequeno Príncipe" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="autor">Autor</label>
+                        <input type="text" id="autor" placeholder="Ex: Antoine de Saint-Exupéry">
+                    </div>
+
+                    <div class="row">
+                        <div class="input-group">
+                            <label for="isbn">ISBN (Busca Automática)</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="text" id="isbn" placeholder="Ex: 9788512345678" style="flex: 1;">
+                                <button type="button" id="btnBuscarIsbn" class="btn-primary" style="margin-top: 0; padding: 0.8rem 1rem; width: auto;">Buscar</button>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="genero">Gênero</label>
+                            <input type="text" id="genero" placeholder="Ex: Ficção">
+                        </div>
+                    </div>
+                        
+                    <div class="row">
+                        <div class="input-group">
+                            <label for="capa_url">URL da Capa</label>
+                            <input type="text" id="capa_url" placeholder="Ex: https://.../image.jpg (Opcional)">
+                        </div>
+                        <div class="input-group">
+                            <label for="status">Status da Leitura</label>
+                            <select id="status">
+                                <option value="Quero Ler">Quero Ler (Lista de Desejos)</option>
+                                <option value="Lendo">Lendo Agora</option>
+                                <option value="Lido">Já Lido</option>
+                                <option value="Emprestado">Emprestado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Cadastrar Livro</button>
+                    <div id="form-feedback" class="feedback-msg"></div>
+                </form>
+            </section>
+
+            <!-- Área de Listagem de Livros -->
+            <section class="books-section reveal">
+                <h2>Acervo Atual</h2>
+                <div class="filters">
+                    <button class="filter-btn active" data-filter="Todos">Todos</button>
+                    <button class="filter-btn" data-filter="Lendo">Lendo</button>
+                    <button class="filter-btn" data-filter="Quero Ler">Desejos</button>
+                    <button class="filter-btn" data-filter="Lido">Lidos</button>
+                    <button class="filter-btn" data-filter="Emprestado">Emprestados</button>
+                </div>
+                
+                <div id="booksGrid" class="books-grid">
+                    <!-- Os livros serão injetados aqui via JavaScript -->
+                    <div class="loading">Carregando acervo...</div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

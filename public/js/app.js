@@ -1,11 +1,58 @@
-const API_URL = 'http://localhost:3000/api/books';
+const API_URL = '/api/books';
+const AUTH_URL = '/api/auth';
 
-let allBooks = []; // Guardará os livros carregados do banco
+let allBooks = [];
 
-// Função para buscar livros do Backend (API)
+// =============================================
+// AUTENTICAÇÃO — verifica se está logado
+// =============================================
+
+// Exibe o nome do usuário logado no header e cria botão de logout
+function setupHeader(usuario) {
+    const header = document.querySelector('header');
+    const userBar = document.createElement('div');
+    userBar.id = 'user-bar';
+    userBar.innerHTML = `
+        <span id="welcome-msg">👤 Olá, <strong>${usuario}</strong></span>
+        <button id="btnLogout" onclick="logout()">Sair</button>
+    `;
+    header.appendChild(userBar);
+}
+
+// Faz o logout e redireciona para o login
+async function logout() {
+    await fetch(`${AUTH_URL}/logout`, { method: 'POST', credentials: 'include' });
+    window.location.href = '/login.html';
+}
+
+// Verifica se o usuário está autenticado antes de tudo
+async function checkAuth() {
+    try {
+        const res = await fetch(`${AUTH_URL}/me`, { credentials: 'include' });
+        const data = await res.json();
+        if (!data.logado) {
+            window.location.href = '/login.html';
+            return false;
+        }
+        setupHeader(data.usuario);
+        return true;
+    } catch (err) {
+        window.location.href = '/login.html';
+        return false;
+    }
+}
+
+// =============================================
+// LIVROS
+// =============================================
+
 async function fetchBooks() {
     try {
-        const response = await fetch(API_URL);
+        const response = await fetch(API_URL, { credentials: 'include' });
+        if (response.status === 401) {
+            window.location.href = '/login.html';
+            return;
+        }
         allBooks = await response.json();
         renderBooks(allBooks);
     } catch (error) {
@@ -14,10 +61,9 @@ async function fetchBooks() {
     }
 }
 
-// Função para desenhar os livros na tela de forma visual
 function renderBooks(books) {
     const grid = document.getElementById('booksGrid');
-    grid.innerHTML = ''; // Limpa antes de preencher
+    grid.innerHTML = '';
 
     if (books.length === 0) {
         grid.innerHTML = '<p>Nenhum livro encontrado.</p>';
@@ -25,17 +71,15 @@ function renderBooks(books) {
     }
 
     books.forEach(book => {
-        // Remove espaços do status para criar o nome da classe CSS (ex: "Quero Ler" vira "QueroLer")
         const statusClass = `status-${book.status.replace(/\s+/g, '')}`;
 
-        const imgHtml = book.capa_url ? 
-            `<img src="${book.capa_url}" alt="Capa" style="width: 100%; height: 200px; object-fit: cover; border-radius: var(--radius) var(--radius) 0 0; background: #eee;">` : 
+        const imgHtml = book.capa_url ?
+            `<img src="${book.capa_url}" alt="Capa" style="width: 100%; height: 200px; object-fit: cover; border-radius: var(--radius) var(--radius) 0 0; background: #eee;">` :
             `<div style="height: 200px; background: #E2E8F0; display:flex; align-items:center; justify-content:center; color: var(--text-muted); border-radius: var(--radius) var(--radius) 0 0;">📚 Sem Capa</div>`;
 
         const card = document.createElement('div');
-        card.className = 'book-card';
-        // Reduzimos o padding para a imagem colar nas bordas
-        card.style.padding = '0'; 
+        card.className = 'book-card reveal';
+        card.style.padding = '0';
         card.innerHTML = `
             ${imgHtml}
             <div style="padding: 1.5rem; display: flex; flex-direction: column; flex: 1;">
@@ -61,12 +105,14 @@ function renderBooks(books) {
         `;
         grid.appendChild(card);
     });
+
+    observeElements();
 }
 
 // Busca de ISBN via API do Google Books
 document.getElementById('btnBuscarIsbn').addEventListener('click', async () => {
-    const isbnInput = document.getElementById('isbn').value.replace(/\D/g, ''); // Apenas números
-    
+    const isbnInput = document.getElementById('isbn').value.replace(/\D/g, '');
+
     if (!isbnInput) {
         showFeedback('Por favor, digite um ISBN válido.', 'red');
         return;
@@ -83,20 +129,18 @@ document.getElementById('btnBuscarIsbn').addEventListener('click', async () => {
 
         if (data.items && data.items.length > 0) {
             const info = data.items[0].volumeInfo;
-            
-            // Preenche os campos caso a API retorne os dados
-            if (info.title) document.getElementById('titulo').value = info.title;
-            if (info.authors) document.getElementById('autor').value = info.authors.join(', ');
+
+            if (info.title)      document.getElementById('titulo').value = info.title;
+            if (info.authors)    document.getElementById('autor').value  = info.authors.join(', ');
             if (info.categories) document.getElementById('genero').value = info.categories[0];
-            
+
             if (info.imageLinks && info.imageLinks.thumbnail) {
-                // Trocamos http por https para evitar erros
                 document.getElementById('capa_url').value = info.imageLinks.thumbnail.replace('http:', 'https:');
             }
-            
+
             showFeedback('Dados encontrados com sucesso!', 'green');
         } else {
-            showFeedback('Nenhum livro encontrado para este ISBN.', '#F59E0B'); // cor de aviso (laranja)
+            showFeedback('Nenhum livro encontrado para este ISBN.', '#F59E0B');
         }
     } catch (error) {
         console.error(error);
@@ -107,32 +151,36 @@ document.getElementById('btnBuscarIsbn').addEventListener('click', async () => {
     }
 });
 
-// Função para cadastrar novo livro
+// Cadastrar novo livro
 document.getElementById('bookForm').addEventListener('submit', async (e) => {
-    e.preventDefault(); // Evita recarregar a página
-    
-    // Pega os dados que o usuário digitou
-    const titulo = document.getElementById('titulo').value;
-    const autor = document.getElementById('autor').value;
-    const genero = document.getElementById('genero').value;
-    const isbn = document.getElementById('isbn').value;
+    e.preventDefault();
+
+    const titulo   = document.getElementById('titulo').value;
+    const autor    = document.getElementById('autor').value;
+    const genero   = document.getElementById('genero').value;
+    const isbn     = document.getElementById('isbn').value;
     const capa_url = document.getElementById('capa_url').value;
-    const status = document.getElementById('status').value;
+    const status   = document.getElementById('status').value;
 
     const newBook = { titulo, autor, genero, isbn, capa_url, status };
 
     try {
-        // Envia para o Back-end
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify(newBook)
         });
 
+        if (response.status === 401) {
+            window.location.href = '/login.html';
+            return;
+        }
+
         if (response.ok) {
-            document.getElementById('bookForm').reset(); // Limpa form
+            document.getElementById('bookForm').reset();
             showFeedback('Livro adicionado com sucesso!', 'green');
-            fetchBooks(); // Recarrega a lista
+            fetchBooks();
         } else {
             showFeedback('Erro ao adicionar.', 'red');
         }
@@ -141,17 +189,17 @@ document.getElementById('bookForm').addEventListener('submit', async (e) => {
     }
 });
 
-// Atualizar o status de um livro
+// Atualizar status de um livro
 async function updateBookStatus(id, newStatus) {
     if (!newStatus) return;
-
     try {
         await fetch(`${API_URL}/${id}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ status: newStatus })
         });
-        fetchBooks(); // Recarrega para mostrar a nova cor e status
+        fetchBooks();
     } catch (error) {
         alert('Erro ao atualizar status.');
     }
@@ -162,49 +210,71 @@ async function deleteBook(id) {
     if (confirm('Tem certeza que deseja excluir este livro?')) {
         try {
             const res = await fetch(`${API_URL}/${id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                credentials: 'include'
             });
-            
-            if (res.ok) {
-                fetchBooks();
-            } else {
-                alert('Erro do servidor ao tentar deletar o livro. Tente reiniciar a API.');
-            }
+
+            if (res.status === 401) { window.location.href = '/login.html'; return; }
+            if (res.ok) fetchBooks();
+            else alert('Erro do servidor ao tentar deletar o livro.');
         } catch (error) {
             alert('Erro de conexão ao deletar o livro.');
         }
     }
 }
 
-// Filtros da interface
+// Filtros
 const filterBtns = document.querySelectorAll('.filter-btn');
 filterBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-        // Remove a classe active de todos e bota no clicado
         filterBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
 
         const filterValue = btn.getAttribute('data-filter');
-        
         if (filterValue === 'Todos') {
             renderBooks(allBooks);
         } else {
-            // Conta com Filter do Array (Simples e eficiente)
-            const filtered = allBooks.filter(book => book.status === filterValue);
-            renderBooks(filtered);
+            renderBooks(allBooks.filter(book => book.status === filterValue));
         }
     });
 });
 
-// Mostrar mensagem rápida para o usuário
+// Feedback visual
 function showFeedback(msg, color) {
     const feedback = document.getElementById('form-feedback');
     feedback.textContent = msg;
     feedback.style.color = color;
-    setTimeout(() => {
-        feedback.textContent = '';
-    }, 3000);
+    setTimeout(() => { feedback.textContent = ''; }, 3000);
 }
 
-// Quando a tela carregar pela primeira vez, busca os livros
-fetchBooks();
+// Inicialização: primeiro verifica auth, depois carrega livros
+checkAuth().then(logado => {
+    if (logado) fetchBooks();
+    
+    // Inicia a observação de elementos estáticos com a classe .reveal
+    observeElements();
+});
+
+// =============================================
+// ANIMAÇÃO DE RENDERIZAÇÃO NO SCROLL (Reveal)
+// =============================================
+function observeElements() {
+    const reveals = document.querySelectorAll('.reveal:not(.observed)');
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('active');
+            } else {
+                entry.target.classList.remove('active');
+            }
+        });
+    }, {
+        threshold: 0.1, // Dispara quando 10% do elemento estiver visível
+        rootMargin: '0px 0px -50px 0px' // Dispara um pouco antes do elemento entrar totalmente
+    });
+
+    reveals.forEach(el => {
+        el.classList.add('observed');
+        observer.observe(el);
+    });
+}
